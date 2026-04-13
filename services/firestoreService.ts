@@ -53,13 +53,21 @@ export const saveFRQToFirestore = async (
   const { storagePath, usage, totalCostUsd, pricingVersion } = options;
 
   try {
+    // NOTE: `images` and `scoringGuideImages` from the FRQ are
+    // intentionally NOT written to Firestore. Each base64 data URL is
+    // in the ~500KB range, and a single FRQ with one question diagram
+    // and one scoring-guide diagram already blows past Firestore's
+    // 1 MB per-document limit → the client SDK throws
+    // "Document ... exceeded the maximum allowed size of 1,048,576 bytes"
+    // BEFORE even attempting to hit the server. Images are already
+    // rendered into the PDF that goes to Storage, and the access site
+    // reads the PDF directly — the duplicated base64 in Firestore was
+    // never consumed by anything.
     const docRef = await addDoc(collection(firestoreInstance, 'frqs'), {
       subject: SUBJECT_SLUG,
       questionText: frq.questionText,
       parts: frq.parts,
-      images: frq.images,
       scoringGuide: frq.scoringGuide,
-      scoringGuideImages: frq.scoringGuideImages,
       maxPoints: frq.maxPoints,
       metadata: {
         frqType: frq.metadata.frqType,

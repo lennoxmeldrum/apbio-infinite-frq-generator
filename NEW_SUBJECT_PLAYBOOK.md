@@ -346,6 +346,15 @@ units become unusable without it.
 - `subject: SUBJECT_SLUG` on every doc. This is what the PDF access website
   uses to filter.
 - Drop any legacy fields from the template (`images`, `unit`, etc.).
+- **Do NOT write `images` or `scoringGuideImages` to Firestore.**
+  Each base64 data URL is ~500KB and even a single FRQ with one
+  question diagram plus one scoring-guide diagram blows past
+  Firestore's 1 MB per-document limit. The images are already
+  rendered into the PDF that goes to Storage, and the access site
+  reads the PDF directly — the Firestore copy is pure duplication.
+  Symptom when this regresses: the browser console shows
+  `Document ... exceeded the maximum allowed size of 1,048,576 bytes`
+  on every save.
 - Coalesce optional strings to `""` — Firestore rejects `undefined` and it's
   a common footgun.
 - Accept `usage`, `totalCostUsd`, and `pricingVersion` via a `SaveOptions`
@@ -542,6 +551,16 @@ Push to a feature branch, not main. Let the user review before you merge.
   column drifting noticeably away from the actual GCP Billing
   charges, that's the first place to check. Bump `PRICING_VERSION`
   when you update.
+- **Writing `images` / `scoringGuideImages` into the Firestore doc.**
+  Copy-paste from an older generator template brings this in. Each
+  base64 image is ~500KB, and two images per FRQ is enough to hit
+  Firestore's 1 MB per-document limit. The SDK validates size
+  client-side, so you see
+  `FirebaseError: Document ... exceeded the maximum allowed size of 1,048,576 bytes`
+  in the browser console the first time you generate an image-heavy
+  FRQ. Fix: strip those two fields from the `addDoc(...)` payload.
+  The access site doesn't read them and the PDF in Storage already
+  has the rendered images.
 - **Cloud Build trigger ignores `cloudbuild.yaml` entirely.** Hit
   once on AP Biology. The trigger was originally set up with the
   "Deploy to Cloud Run from source" wizard, which installs a
