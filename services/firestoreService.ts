@@ -1,5 +1,6 @@
 import { getFirestore, addDoc, collection, serverTimestamp, Firestore } from 'firebase/firestore';
 import { GeneratedFRQ } from '../types';
+import { SUBJECT_SLUG } from '../constants';
 import { getFirebaseAppWithAuth, isFirestoreConfigured } from './firebaseService';
 
 let firestore: Firestore | null = null;
@@ -35,6 +36,7 @@ export const saveFRQToFirestore = async (
 
   try {
     const docRef = await addDoc(collection(firestoreInstance, 'frqs'), {
+      subject: SUBJECT_SLUG,
       questionText: frq.questionText,
       parts: frq.parts,
       images: frq.images,
@@ -49,7 +51,7 @@ export const saveFRQToFirestore = async (
         actualSubTopics: frq.metadata.actualSubTopics,
         wasRandom: frq.metadata.wasRandom
       },
-      storagePath: storagePath || null,
+      storagePath: storagePath || "",
       createdAt: serverTimestamp()
     });
 

@@ -1,18 +1,21 @@
 export enum Unit {
-  Kinematics = "Unit 1: Kinematics",
-  Dynamics = "Unit 2: Force and Translational Dynamics",
-  WorkEnergy = "Unit 3: Work, Energy, and Power",
-  Momentum = "Unit 4: Linear Momentum",
-  Rotation = "Unit 5: Torque and Rotational Dynamics",
-  Rolling = "Unit 6: Energy and Momentum of Rotating Systems",
-  Oscillations = "Unit 7: Oscillations"
+  ChemistryOfLife = "Unit 1: Chemistry of Life",
+  Cells = "Unit 2: Cells",
+  CellularEnergetics = "Unit 3: Cellular Energetics",
+  CellCommunication = "Unit 4: Cell Communication and Cell Cycle",
+  Heredity = "Unit 5: Heredity",
+  GeneExpression = "Unit 6: Gene Expression and Regulation",
+  NaturalSelection = "Unit 7: Natural Selection",
+  Ecology = "Unit 8: Ecology"
 }
 
 export enum FRQType {
-  MR = "Mathematical Routines (MR)",
-  TBR = "Translation Between Representations (TBR)",
-  LAB = "Experimental Design and Analysis (LAB)",
-  QQT = "Qualitative/Quantitative Translation (QQT)"
+  IEE = "Interpreting and Evaluating Experimental Results (IEE)",
+  IEG = "Interpreting and Evaluating Experimental Results with Graphing (IEG)",
+  SI = "Scientific Investigation (SI)",
+  CA = "Conceptual Analysis (CA)",
+  AVR = "Analyze Model or Visual Representation (AVR)",
+  AD = "Analyze Data (AD)"
 }
 
 export interface SubTopic {
@@ -28,7 +31,7 @@ export interface UnitData {
 
 export interface FRQMetadata {
   frqType: FRQType;
-  frqTypeShort: string;        // "MR", "TBR", "LAB", "QQT"
+  frqTypeShort: string;        // "IEE", "IEG", "SI", "CA", "AVR", "AD"
   selectedUnits: Unit[];       // Units the user explicitly picked (may be empty)
   selectedSubTopics: string[]; // Topic IDs the user explicitly picked (may be empty)
   actualSubTopics: string[];   // Topic IDs the model reports it actually used
@@ -38,15 +41,15 @@ export interface FRQMetadata {
 export interface GeneratedFRQ {
   questionText: string;
   parts: FRQPart[];
-  images: string[]; // Base64 or URLs for question diagrams
+  images: string[]; // Base64 or URLs for question diagrams/figures (cell diagrams, cladograms, data figures)
   scoringGuide: string; // The full scoring guide text
-  scoringGuideImages: string[]; // Base64 or URLs for scoring guide diagrams (graphs, tables, FBDs)
+  scoringGuideImages: string[]; // Base64 or URLs for scoring guide diagrams (sample graphs, annotated diagrams)
   maxPoints: number;
   metadata: FRQMetadata; // Added for PDF generation and storage
 }
 
 export interface FRQPart {
-  label: string; // (a), (b), etc.
+  label: string; // "Part A", "Part B", "Part B (i)", etc.
   text: string;
   points: number;
 }

@@ -16,7 +16,7 @@ const App: React.FC = () => {
 
   const handleGenerate = async (type: FRQType, selectedUnits: Unit[], selectedSubTopics: string[]) => {
     setAppState('GENERATING');
-    setLoadingMsg("Generating a unique AP Physics C: Mechanics FRQ based on College Board standards...");
+    setLoadingMsg("Generating a unique AP Biology FRQ based on College Board standards...");
     try {
       const frq = await generateFRQ(type, selectedUnits, selectedSubTopics);
       setCurrentFRQ(frq);

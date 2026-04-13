@@ -62,9 +62,9 @@ const SelectionScreen: React.FC<Props> = ({ onGenerate }) => {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8 animate-fade-in">
       <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold text-indigo-900">AP Physics C: Mechanics</h1>
+        <h1 className="text-4xl font-bold text-indigo-900">AP Biology</h1>
         <p className="text-xl text-indigo-600">Infinite FRQ Generator</p>
-        <p className="text-sm text-gray-500">2024 CED · MR, TBR, LAB, QQT</p>
+        <p className="text-sm text-gray-500">2025 CED · IEE, IEG, SI, CA, AVR, AD</p>
       </div>
 
       {/* FRQ Type Selection */}

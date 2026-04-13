@@ -117,7 +117,7 @@ const PrintableContent: React.FC<PrintableContentProps> = ({
       {/* Header */}
       <div style={{ marginBottom: '24px', borderBottom: '2px solid #e5e7eb', paddingBottom: '16px' }}>
         <h1 style={{ fontSize: '18pt', fontWeight: 'bold', margin: '0 0 8px 0', color: '#111827' }}>
-          AP Physics C: Mechanics FRQ - {frqTypeShort}
+          AP Biology FRQ - {frqTypeShort}
         </h1>
         <p style={{ fontSize: '11pt', margin: '0', color: '#6b7280' }}>
           Topics: {subUnitsText}
