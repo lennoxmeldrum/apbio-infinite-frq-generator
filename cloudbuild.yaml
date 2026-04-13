@@ -30,9 +30,13 @@ steps:
 images:
   - 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/apbio-infinite-frq-generator/apbio-infinite-frq-generator:$COMMIT_SHA'
 
-# Substitution variables - set these in your Cloud Build trigger
+# Substitution variables. The defaults below match the shared Firebase
+# project used by every generator in the fleet, so a fresh Cloud Build
+# trigger works out of the box without setting any substitutions in the
+# trigger UI. Override in the trigger only if you ever point this
+# generator at a different Firebase project.
 substitutions:
-  _FIREBASE_API_KEY: 'AIzaSyBy0BvarIrW1PLb1IdH30MfvXQ2wJrE2oMAIzaSyBy0BvarIrW1PLb1IdH30MfvXQ2wJrE2oM'
+  _FIREBASE_API_KEY: 'AIzaSyBy0BvarIrW1PLb1IdH30MfvXQ2wJrE2oM'
   _FIREBASE_AUTH_DOMAIN: 'unique-sentinel-423412-q3.firebaseapp.com'
   _FIREBASE_PROJECT_ID: 'unique-sentinel-423412-q3'
   _FIREBASE_STORAGE_BUCKET: 'unique-sentinel-423412-q3.firebasestorage.app'
