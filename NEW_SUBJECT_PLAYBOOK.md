@@ -449,6 +449,18 @@ Push to a feature branch, not main. Let the user review before you merge.
 - **Missing FIREBASE_* env vars on a freshly deployed service.** Generation
   works, persistence silently no-ops. Always confirm the archive has new
   docs after the first deploy.
+- **Mangled `_FIREBASE_API_KEY` substitution in `cloudbuild.yaml`.**
+  Hit once on AP Biology — the substitution value contained the
+  39-char Firebase web key concatenated with itself, so Firebase init
+  silently rejected it and every Storage / Firestore write no-op'd.
+  After cloning, eyeball the substitutions block:
+  - `_FIREBASE_API_KEY` should be 39 characters, starting `AIzaSy`.
+  - The other 5 vars should be exactly the same shape as in the
+    template repo — no leading/trailing whitespace, no doubled
+    values, no missing dots.
+  Quick sanity check from the repo root:
+  `awk -F: '/_FIREBASE_API_KEY/ { gsub(/[ '\''"]/, "", $2); print length($2) }' cloudbuild.yaml`
+  should print `39`.
 - **Inner vertical scrollbar on the landing page.** Body must be
   `min-h-screen`, not `h-screen overflow-hidden`. The viewport lock is
   applied conditionally inside `App.tsx` only when `appState !== 'SELECTION'`.
