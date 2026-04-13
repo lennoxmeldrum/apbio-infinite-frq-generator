@@ -108,7 +108,7 @@ const ResultsView: React.FC<Props> = ({ frq, result, onBack }) => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <h2 className="text-lg font-bold text-indigo-900">
-                AP Physics C: Mechanics FRQ - {frq.metadata.frqTypeShort}
+                AP Biology FRQ - {frq.metadata.frqTypeShort}
               </h2>
               <p className="text-sm text-indigo-700">
                 Topics: {getSubUnitsString(frq.metadata.selectedSubTopics, frq.metadata.actualSubTopics)}
@@ -282,7 +282,7 @@ const ResultsView: React.FC<Props> = ({ frq, result, onBack }) => {
       <div className="w-full md:w-1/3 flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-100">
         <div className="p-4 border-b border-gray-100 bg-indigo-600 rounded-t-xl shadow-sm">
             <h3 className="text-white font-semibold flex items-center">
-                <span className="mr-2 text-xl">🤖</span> Physics Tutor
+                <span className="mr-2 text-xl">🤖</span> Biology Tutor
             </h3>
             <p className="text-indigo-100 text-xs mt-1">Ask about the concepts, solution, or your specific grade.</p>
         </div>
@@ -291,8 +291,8 @@ const ResultsView: React.FC<Props> = ({ frq, result, onBack }) => {
             {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-4">
                     <span className="text-4xl mb-2">👋</span>
-                    <p>Hi! I'm your physics tutor.</p>
-                    <p className="text-sm mt-2">I can explain the solution, clarify physics concepts, or help you understand where you missed points.</p>
+                    <p>Hi! I'm your biology tutor.</p>
+                    <p className="text-sm mt-2">I can explain the solution, clarify biology concepts, or help you understand where you missed points.</p>
                 </div>
             )}
             {messages.map((msg, i) => (

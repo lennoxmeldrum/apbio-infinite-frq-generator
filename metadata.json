@@ -1,5 +1,5 @@
 {
-  "name": "AP Physics C: Mechanics Infinite FRQ Generator",
-  "description": "Generate unlimited, exam-style Free Response Questions for AP Physics C: Mechanics. Choose from MR, TBR, LAB, or QQT types across all 7 course units. Upload your work for AI grading and feedback.",
+  "name": "AP Biology Infinite FRQ Generator",
+  "description": "Generate unlimited, exam-style Free Response Questions for AP Biology. Choose from all six question types (Interpreting and Evaluating Experimental Results, with Graphing, Scientific Investigation, Conceptual Analysis, Analyze Model or Visual Representation, Analyze Data) across all 8 course units. Upload your work for AI grading and feedback.",
   "requestFramePermissions": []
 }

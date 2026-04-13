@@ -8,7 +8,7 @@ const Loading: React.FC<{ message: string }> = ({ message }) => (
     </div>
     <div className="text-xl font-medium text-indigo-900 animate-pulse">{message}</div>
     <div className="text-sm text-gray-500 max-w-md text-center">
-        This uses advanced reasoning models to ensure the physics is accurate. It may take up to 30 seconds.
+        This uses advanced reasoning models to ensure the biology is accurate. It may take up to 30 seconds.
     </div>
   </div>
 );
