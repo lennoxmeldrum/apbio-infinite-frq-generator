@@ -433,6 +433,19 @@ Smoke test matrix:
 
 ### 17. Cloud deploy
 
+**First, verify the Cloud Build trigger is pointed at the repo's
+`cloudbuild.yaml`, not the "Deploy from source" wizard's
+auto-generated config.** Cloud Console → Cloud Build → Triggers →
+click the service's trigger → Configuration section must say
+"Cloud Build configuration file (yaml or json)" with Repository
+path `/cloudbuild.yaml`. If instead the Substitution variables
+show `_AR_HOSTNAME`, `_AR_REPOSITORY`, `_DEPLOY_REGION`,
+`_SERVICE_NAME`, `_TRIGGER_ID`, the trigger is on the wizard
+path and will ignore every step in our yaml — see the matching
+Common Pitfalls entry for the full fix. This trapped AP Biology
+for weeks (generation worked, Firestore never received a doc)
+and was invisible without checking.
+
 Critical Cloud Run env var checklist — **this is where every previous
 deploy has tripped**:
 
@@ -529,6 +542,30 @@ Push to a feature branch, not main. Let the user review before you merge.
   column drifting noticeably away from the actual GCP Billing
   charges, that's the first place to check. Bump `PRICING_VERSION`
   when you update.
+- **Cloud Build trigger ignores `cloudbuild.yaml` entirely.** Hit
+  once on AP Biology. The trigger was originally set up with the
+  "Deploy to Cloud Run from source" wizard, which installs a
+  Cloud-generated build config keyed on substitutions like
+  `_AR_HOSTNAME`, `_AR_REPOSITORY`, `_DEPLOY_REGION`,
+  `_SERVICE_NAME`, `_TRIGGER_ID`. That auto-config does `docker
+  build` + `gcloud run deploy` but WITHOUT the `--set-env-vars`
+  step our `cloudbuild.yaml` relies on, so the deployed service
+  never gets the six `FIREBASE_*` env vars. Firebase init then
+  fails silently, generation works (Gemini key comes from Secret
+  Manager separately), but every write to Firestore / Storage
+  no-ops. The symptom in the browser console is:
+  `Firebase config missing: FIREBASE_API_KEY, FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET`
+  How to diagnose: Cloud Console → Cloud Build → Triggers → click
+  the service's trigger → Substitution variables. If you see
+  `_AR_*` / `_DEPLOY_REGION` / `_SERVICE_NAME` instead of
+  `_FIREBASE_*`, the trigger is on the wizard path and ignoring
+  the repo's yaml.
+  How to fix: on that same trigger edit page, find the
+  Configuration section → switch from "Autodetected" /
+  "Dockerfile" to "Cloud Build configuration file (yaml or json)"
+  → set Location to Repository → path `/cloudbuild.yaml`. Save,
+  then Run trigger. The `_AR_*` substitution rows become inert
+  (our yaml doesn't reference them) — safe to delete or leave.
 - **Inner vertical scrollbar on the landing page.** Body must be
   `min-h-screen`, not `h-screen overflow-hidden`. The viewport lock is
   applied conditionally inside `App.tsx` only when `appState !== 'SELECTION'`.
