@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AP Physics C: Mechanics Infinite FRQ Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* Custom scrollbar for better aesthetics */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      /* Markdown Styles */
+      .markdown-content p { margin-bottom: 1em; }
+      .markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+      .markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+      .markdown-content strong { font-weight: 600; }
+      .markdown-content em { font-style: italic; }
+      .markdown-content code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25rem; font-family: monospace; font-size: 0.9em; }
+      .markdown-content pre { background-color: #f3f4f6; padding: 1em; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1em; }
+      /* Table Styles */
+      .markdown-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+      .markdown-content th, .markdown-content td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
+      .markdown-content th { background-color: #f9fafb; font-weight: 600; }
+      /* KaTeX Adjustments */
+      .katex-display { margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-markdown": "https://esm.sh/react-markdown@9?bundle",
+    "remark-math": "https://esm.sh/remark-math@6?bundle",
+    "remark-gfm": "https://esm.sh/remark-gfm@4?bundle",
+    "rehype-katex": "https://esm.sh/rehype-katex@7?bundle"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-50 text-gray-900 min-h-screen">
+    <div id="root" class="min-h-screen"></div>
+    <!-- Load runtime configuration before app initialization -->
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
