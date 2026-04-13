@@ -18,14 +18,21 @@ const App: React.FC = () => {
     setAppState('GENERATING');
     setLoadingMsg("Generating a unique AP Biology FRQ based on College Board standards...");
     try {
-      const frq = await generateFRQ(type, selectedUnits, selectedSubTopics);
+      const { frq, usage, totalCostUsd, pricingVersion } = await generateFRQ(type, selectedUnits, selectedSubTopics);
       setCurrentFRQ(frq);
       setAppState('QUESTION');
 
-      // Persist to Firebase in the background (non-blocking)
+      // Persist to Firebase in the background (non-blocking). Cost
+      // metadata rides along with the other fields and surfaces in
+      // the ap-frq-access archive once saved.
       const persistFRQ = async () => {
         const storagePath = await uploadFRQToStorage(frq);
-        await saveFRQToFirestore(frq, storagePath ?? undefined);
+        await saveFRQToFirestore(frq, {
+          storagePath: storagePath ?? undefined,
+          usage,
+          totalCostUsd,
+          pricingVersion,
+        });
       };
 
       persistFRQ().catch(err => {

@@ -2,6 +2,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeneratedFRQ, AssessmentResult, FRQType, Unit } from '../types';
 import { FRQ_POINT_TOTALS, UNITS } from '../constants';
+import {
+  buildUsageRecord,
+  PRICING_VERSION,
+  sumCost,
+  UsageRecord,
+} from './pricing';
 
 // Helper to get short FRQ type code
 const getFRQTypeShort = (type: FRQType): string => {
@@ -565,11 +571,23 @@ const buildPromptForType = (type: FRQType, topicContext: string, totalPoints: nu
 
 // ---------- Generation entry point ----------
 
+// Return shape of `generateFRQ`: the FRQ itself plus an audit trail
+// of every Gemini call that went into producing it. The access-site
+// archive reads `totalCostUsd` off the saved Firestore doc and shows
+// a per-FRQ cost column; `usage` is there for spot-checking (e.g.,
+// "which call spent the most tokens on this outlier").
+export interface GenerationResult {
+  frq: GeneratedFRQ;
+  usage: UsageRecord[];
+  totalCostUsd: number;
+  pricingVersion: string;
+}
+
 export const generateFRQ = async (
   type: FRQType,
   selectedUnits: Unit[],
   selectedSubTopics: string[]
-): Promise<GeneratedFRQ> => {
+): Promise<GenerationResult> => {
 
   const { subTopicIds, wasRandom } = resolveTopicPool(selectedUnits, selectedSubTopics);
   const topicContext = formatTopicContext(subTopicIds);
@@ -622,6 +640,11 @@ textbook-style diagram. Example quality:
 Output ONLY valid JSON (no markdown code fences, no preamble).
 `;
 
+  // Collect usage from every Gemini call in this generation pipeline
+  // (one text call + up to 2 × N image calls). Summed + stamped on
+  // the Firestore doc at save time.
+  const usage: UsageRecord[] = [];
+
   try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -673,6 +696,8 @@ Output ONLY valid JSON (no markdown code fences, no preamble).
         }
       }
     });
+
+    usage.push(buildUsageRecord(MODEL_NAME, response.usageMetadata));
 
     let textResponse = response.text || "{}";
     if (textResponse.includes("```json")) {
@@ -730,14 +755,17 @@ Output ONLY valid JSON (no markdown code fences, no preamble).
             }
           });
 
+          let imagesReturned = 0;
           if (imgResponse.candidates && imgResponse.candidates[0].content.parts) {
             for (const part of imgResponse.candidates[0].content.parts) {
               if (part.inlineData) {
                 images.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
+                imagesReturned = 1;
                 break;
               }
             }
           }
+          usage.push(buildUsageRecord(IMAGE_GEN_MODEL, imgResponse.usageMetadata, imagesReturned));
         } catch (e) {
           console.warn("Failed to generate question image (continuing without):", imgPrompt);
         }
@@ -762,21 +790,24 @@ Output ONLY valid JSON (no markdown code fences, no preamble).
             }
           });
 
+          let imagesReturned = 0;
           if (imgResponse.candidates && imgResponse.candidates[0].content.parts) {
             for (const part of imgResponse.candidates[0].content.parts) {
               if (part.inlineData) {
                 scoringGuideImages.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
+                imagesReturned = 1;
                 break;
               }
             }
           }
+          usage.push(buildUsageRecord(IMAGE_GEN_MODEL, imgResponse.usageMetadata, imagesReturned));
         } catch (e) {
           console.warn("Failed to generate scoring guide image (continuing without):", imgPrompt);
         }
       }
     }
 
-    return {
+    const frq: GeneratedFRQ = {
       questionText: data.questionText || "Error retrieving question text.",
       parts: data.parts,
       images: images,
@@ -791,6 +822,13 @@ Output ONLY valid JSON (no markdown code fences, no preamble).
         actualSubTopics: Array.isArray(data.usedSubTopics) ? data.usedSubTopics : [],
         wasRandom
       }
+    };
+
+    return {
+      frq,
+      usage,
+      totalCostUsd: sumCost(usage),
+      pricingVersion: PRICING_VERSION,
     };
 
   } catch (error) {

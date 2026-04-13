@@ -2,6 +2,7 @@ import { getFirestore, addDoc, collection, serverTimestamp, Firestore } from 'fi
 import { GeneratedFRQ } from '../types';
 import { SUBJECT_SLUG } from '../constants';
 import { getFirebaseAppWithAuth, isFirestoreConfigured } from './firebaseService';
+import { UsageRecord } from './pricing';
 
 let firestore: Firestore | null = null;
 
@@ -23,9 +24,24 @@ const initializeFirestore = async (): Promise<Firestore | null> => {
   return firestore;
 };
 
+export interface SaveOptions {
+  storagePath?: string;
+  // Per-Gemini-call audit trail, preserved on the doc so the access
+  // site can break down an outlier FRQ if needed.
+  usage?: UsageRecord[];
+  // Pre-computed sum of `usage[*].costUsd`. Stored alongside `usage`
+  // so recomputing totals on the access site doesn't require running
+  // the price table there — and so the historical cost survives
+  // price-table edits.
+  totalCostUsd?: number;
+  // Identifies which version of the price table produced the cost
+  // values above. Helps diagnose "why did our totals jump?"
+  pricingVersion?: string;
+}
+
 export const saveFRQToFirestore = async (
   frq: GeneratedFRQ,
-  storagePath?: string
+  options: SaveOptions = {}
 ): Promise<string | null> => {
   const firestoreInstance = await initializeFirestore();
 
@@ -33,6 +49,8 @@ export const saveFRQToFirestore = async (
     console.log('Firestore not available - skipping save');
     return null;
   }
+
+  const { storagePath, usage, totalCostUsd, pricingVersion } = options;
 
   try {
     const docRef = await addDoc(collection(firestoreInstance, 'frqs'), {
@@ -52,6 +70,13 @@ export const saveFRQToFirestore = async (
         wasRandom: frq.metadata.wasRandom
       },
       storagePath: storagePath || "",
+      // Cost metadata. Coalesced to fleet-standard defaults when the
+      // generator doesn't provide them — Firestore rejects undefined
+      // and we want legacy docs without these fields to continue
+      // working without a backfill.
+      usage: usage ?? [],
+      totalCostUsd: totalCostUsd ?? 0,
+      pricingVersion: pricingVersion ?? "",
       createdAt: serverTimestamp()
     });
 
