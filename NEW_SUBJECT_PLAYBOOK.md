@@ -180,6 +180,14 @@ walk through it top to bottom, editing in place:
   `window.__RUNTIME_CONFIG__.FRQ` → `process.env.GEMINI_API_KEY` →
   `process.env.API_KEY` chain so both local dev and Cloud Run work without
   config changes.
+- The usage-capture pattern around every `ai.models.generateContent(...)`
+  call: declare a `const usage: UsageRecord[] = []` at the top of
+  `generateFRQ`, then `usage.push(buildUsageRecord(MODEL, response.usageMetadata, imagesReturned))`
+  after each call. Return `{ frq, usage, totalCostUsd: sumCost(usage), pricingVersion: PRICING_VERSION }`
+  instead of the bare `GeneratedFRQ`. The imports come from `./pricing`.
+  See `EXTRACTION.md` and the existing apbio implementation for the
+  exact shape — losing this means the access site shows `—` in the
+  Cost column for every FRQ this generator writes.
 - `resolveTopicPool(selectedUnits, selectedSubTopics)` — returns the list of
   permissible topic IDs + names given the user's selection. Handles the
   "selected units with no explicit subtopics → expand to all subtopics"
@@ -340,6 +348,31 @@ units become unusable without it.
 - Drop any legacy fields from the template (`images`, `unit`, etc.).
 - Coalesce optional strings to `""` — Firestore rejects `undefined` and it's
   a common footgun.
+- Accept `usage`, `totalCostUsd`, and `pricingVersion` via a `SaveOptions`
+  object alongside `storagePath`, and write all three onto the Firestore
+  doc. Coalesce to `[]`, `0`, and `""` respectively when missing — this
+  is the contract the access site reads to populate the per-FRQ Cost
+  column and the per-subject "$X.XX in Gemini API spend" label.
+
+### 11b. `services/pricing.ts` — copy across, then verify the price table
+
+Every generator carries its own copy of `services/pricing.ts`. Copy
+the file from the template repo verbatim, then:
+
+- Open the price table near the top and confirm each model the new
+  generator's `geminiService.ts` actually uses has an entry. If you
+  add a new model (e.g. moving from `gemini-3-pro` to a successor),
+  add it here too.
+- Bump `PRICING_VERSION` to today's date in `YYYY-MM` form so the
+  access site's archive can flag generations that ran on an older
+  price table.
+- Eyeball the dollar values against https://ai.google.dev/pricing —
+  pricing changes a few times a year and the table goes stale fast.
+
+The `geminiService.ts` import (`buildUsageRecord`, `sumCost`,
+`PRICING_VERSION`, `UsageRecord`) is then identical across the
+fleet; the only thing that varies is the model names in the
+`PRICE_TABLE` constant.
 
 ### 12. Update `services/storageService.ts`
 
@@ -426,11 +459,31 @@ that all 6 FIREBASE_* vars are set. This is the second most common mistake.
 
 ### 18. Register the subject with the PDF access website
 
-- Add the new subject slug to the access site's list of known subjects.
-- Confirm Firestore docs from the new generator carry `subject: SUBJECT_SLUG`
-  and show up in the access site's listing.
-- Run the index-creation prompt if Firestore asks for a new composite
-  index on `(subject, createdAt desc)`.
+The full walkthrough lives at `REGISTER_NEW_SUBJECT.md` in the
+`ap-frq-access` repo
+(https://github.com/lennoxmeldrum/ap-frq-access/blob/main/REGISTER_NEW_SUBJECT.md).
+**Read that file** rather than reinventing the steps — it covers
+the exact edits to `types.ts` and `constants.ts`, the College Board
+category to use, the colour-class pattern, and the post-deploy
+manifest-rebuild click. Mismatches between this playbook and that
+file should be resolved in favour of that file (it lives next to
+the code it changes; this one only links to it).
+
+The TL;DR for this step:
+
+- Add the new subject slug to the `SubjectSlug` union in
+  `ap-frq-access/types.ts`.
+- Add a `SUBJECTS` entry in `ap-frq-access/constants.ts` with the
+  matching `slug`, `category`, and `storagePrefix`.
+- Confirm Firestore docs from the new generator carry
+  `subject: SUBJECT_SLUG` and show up in the access site's listing.
+- Click **Run trigger** on the `ap-frq-access-functions` Cloud
+  Build trigger if you want the manifest backfilled immediately
+  rather than waiting for the next FRQ write.
+
+Composite indexes don't need any new entries — they're keyed on
+`(subject, createdAt)` and `(subject, metadata.frqTypeShort, createdAt)`,
+both subject-agnostic.
 
 ### 19. Commit and push
 
@@ -461,6 +514,21 @@ Push to a feature branch, not main. Let the user review before you merge.
   Quick sanity check from the repo root:
   `awk -F: '/_FIREBASE_API_KEY/ { gsub(/[ '\''"]/, "", $2); print length($2) }' cloudbuild.yaml`
   should print `39`.
+- **Skipping the `services/pricing.ts` copy.** If you forget to copy
+  the file from the template repo, `geminiService.ts` won't compile
+  (the `buildUsageRecord` import resolves to nothing). If you copy
+  the file but forget to register a new model name in
+  `PRICE_TABLE`, every call to that model logs a console warning
+  and stamps `costUsd: 0` — the access site's Cost column quietly
+  shows everything as `$0.00`. Always verify the model names in
+  `PRICE_TABLE` match the model constants at the top of
+  `geminiService.ts`.
+- **Stale prices in `services/pricing.ts`.** Gemini pricing changes
+  a few times a year. The dollar amounts in the price table are
+  point-in-time snapshots — if you spot the access site's Cost
+  column drifting noticeably away from the actual GCP Billing
+  charges, that's the first place to check. Bump `PRICING_VERSION`
+  when you update.
 - **Inner vertical scrollbar on the landing page.** Body must be
   `min-h-screen`, not `h-screen overflow-hidden`. The viewport lock is
   applied conditionally inside `App.tsx` only when `appState !== 'SELECTION'`.
@@ -495,11 +563,19 @@ sitting in the cloned repo:
 - The **new** subject's `CED-and-FRQs/` folder already dropped in,
   replacing the template subject's CED material.
 
+…and the session should ALSO have the `ap-frq-access` repo linked
+in (separately from the generator clone), because Step 18 requires
+edits there. The session should read
+`ap-frq-access/REGISTER_NEW_SUBJECT.md` for the exact two-file
+patch (`types.ts` + `constants.ts`) it needs to make. Without that
+linkage the new subject won't appear on the archive site.
+
 Plus a one-line prompt:
 
 > Convert this AP [Template] generator to AP [NewSubject] following
 > `NEW_SUBJECT_PLAYBOOK.md`. The new subject's CED is already in
-> `CED-and-FRQs/`.
+> `CED-and-FRQs/`. The `ap-frq-access` repo is also linked — apply
+> the access-site changes per its `REGISTER_NEW_SUBJECT.md`.
 
 That's enough context for the next session to work autonomously from
 clone to push.
